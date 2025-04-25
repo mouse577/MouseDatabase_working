@@ -1,0 +1,41 @@
+git branch
+git branch -a
+git branch -r
+
+git pull origin main
+git add .
+git commit -m "..."
+
+git status
+git add path/to/file1.py path/to/file2.py, ...
+git commit -m "..."
+
+git push 
+git push origin <branch-name>
+git push --set-upstream origin <branch-name>
+
+git checkout -b <new-branch-name> // creates new branch and switches to it
+git checkout <branch-name>
+
+git log
+git diff
+git diff --stages
+git branch
+git remote -v
+
+git clone <repo-url>
+
+git branch backup-before-reset
+git reset <file>
+git reset --hard
+git reset --soft HEAD-1
+git reset --mixed HEAD-1
+git push --force
+
+git stash
+git stash pop
+git clean -fd
+
+to create/activate venv:
+create:    python3 -m venve mouseDB_gui
+activate:  source mouseDB_gui/bin/activate
