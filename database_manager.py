@@ -171,7 +171,7 @@ def insert_record(db_file, id_tatoo_nt, cage_num, mouseline, genotype, gender, d
 
 
 
-def update_record(db_file, index_id, cage_num, mouseline, genotype, gender, dob, available, health, user_name, manipulations, experiment_1, experiment_2, experiment_3, experiment_4, experiment_5, status, comments):
+def update_record(db_file, index_id, cage_num, mouseline, genotype, gender, dob, available, health, user_name, manipulations, experiment_1, experiment_2, experiment_3, experiment_4, experiment_5, status, comments, table_name="mouse_list"):
     """Updates an existing record using ID_TATOO_NT as the unique identifier, including COMMENTS."""
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
@@ -181,7 +181,7 @@ def update_record(db_file, index_id, cage_num, mouseline, genotype, gender, dob,
         return False  # If index_id is missing, fail early
 
     cursor.execute(f"""
-        UPDATE {TABLE_NAME}
+        UPDATE {table_name}
         SET CAGE_NUM = ?, MOUSELINE = ?, GENOTYPE = ?, GENDER = ?, DOB = ?, AVAILABLE = ?, HEALTH = ?, USER_NAME = ?, MANIPULATIONS = ?, EXPERIMENT_1 = ?, EXPERIMENT_2 = ?,EXPERIMENT_3 = ?, EXPERIMENT_4 = ?, EXPERIMENT_5 = ?, STATUS = ?, COMMENTS = ?
         WHERE INDEX_ID = ?
     """, (cage_num, mouseline, genotype, gender, dob, available, health, user_name, manipulations, experiment_1, experiment_2, experiment_3, experiment_4, experiment_5, status, comments, index_id))
@@ -313,12 +313,12 @@ def add_age_column_to_all_dbs():
         conn.close()
 
 
-def update_age_in_days(db_file):
-    """Updates AGE_IN_DAYS for all rows based on DOB and current date."""
+def update_age_in_days(db_file, table_name="mouse_list"):
+    """Updates AGE_IN_DAYS for all rows based on DOB and current date in the specified table."""
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
-    cursor.execute(f"SELECT ROWID, DOB FROM {TABLE_NAME}")
+    cursor.execute(f"SELECT ROWID, DOB FROM {table_name}")
     rows = cursor.fetchall()
 
     for row_id, dob in rows:
@@ -326,14 +326,57 @@ def update_age_in_days(db_file):
             if dob and dob.lower() != "none":
                 dob_date = datetime.strptime(dob, "%Y-%m-%d")
                 age_days = (datetime.now() - dob_date).days
-                cursor.execute(f"UPDATE {TABLE_NAME} SET AGE_IN_DAYS = ? WHERE ROWID = ?", (str(age_days), row_id))
+                cursor.execute(f"UPDATE {table_name} SET AGE_IN_DAYS = ? WHERE ROWID = ?", (str(age_days), row_id))
             else:
-                cursor.execute(f"UPDATE {TABLE_NAME} SET AGE_IN_DAYS = 'None' WHERE ROWID = ?", (row_id,))
+                cursor.execute(f"UPDATE {table_name} SET AGE_IN_DAYS = 'None' WHERE ROWID = ?", (row_id,))
         except Exception as e:
-            print(f"⚠️ Skipped row {row_id} due to invalid DOB: {dob}")
+            print(f"⚠️ Skipped row {row_id} in table {table_name} due to invalid DOB: {dob}")
 
     conn.commit()
     conn.close()
+
+
+
+def get_all_tables(db_file):
+    """Returns a list of table names in the given database."""
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    tables = [row[0] for row in cursor.fetchall() if row[0] != "sqlite_sequence"]
+    conn.close()
+    return tables
+
+def create_new_table(db_file, new_table_name):
+    """Creates a new table in the selected database with the same schema as mouse_list."""
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+
+    cursor.execute(f"""
+        CREATE TABLE IF NOT EXISTS {new_table_name} (
+            INDEX_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            ID_TATOO_NT TEXT,
+            CAGE_NUM INTEGER,
+            MOUSELINE TEXT,
+            GENOTYPE TEXT,
+            GENDER TEXT,
+            DOB TEXT,
+            AGE_IN_DAYS TEXT,
+            AVAILABLE TEXT,
+            HEALTH TEXT,
+            USER_NAME TEXT,
+            MANIPULATIONS TEXT,
+            EXPERIMENT_1 TEXT,
+            EXPERIMENT_2 TEXT,
+            EXPERIMENT_3 TEXT,
+            EXPERIMENT_4 TEXT,
+            EXPERIMENT_5 TEXT,
+            STATUS TEXT,
+            COMMENTS TEXT DEFAULT ''
+        )
+    """)
+    conn.commit()
+    conn.close()
+
 
 
 
